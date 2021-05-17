@@ -1,26 +1,31 @@
 import threading
-
-a = 0
-r_lock = threading.RLock()
+from threading import Thread
 
 
-def function(arg):
-    global a
-    with r_lock:
+class ThreadCounter():
+
+    def __init__(self, count_value=0):
+        self.count_value = count_value
+        self.thread_lock = threading.Lock()
+
+    def function(self, arg):
         for _ in range(arg):
-            a += 1
+            with self.thread_lock:
+                self.count_value += 1
+
+    def thread_count(self, threads_num):
+        threads = []
+        for i in range(threads_num):
+            thread = Thread(target=self.function, args=(1000000,))
+            threads.append(thread)
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        print("----------------------", self.count_value)
 
 
-def main():
-    threads = []
-    for i in range(5):
-        thread = threading.Thread(target=function, args=(1000000,))
-        threads.append(thread)
-        thread.start()
-
-    for thread in threads:
-        thread.join()
-    print("----------------------", a)
-
-
-main()
+if __name__ == '__main__':
+    ThreadCounter().thread_count(5)
