@@ -23,7 +23,6 @@ import functools
 @functools.total_ordering
 class Version:
 
-
     def __init__(self, version):
         self.major = self.select_version_components(version)[0]
         self.minor = self.select_version_components(version)[1]
@@ -50,14 +49,19 @@ class Version:
         Selects {major}.{minor}.{patch}-{pre_release} components from the version number.
         Return tuple(major, minor, patch, pre_release)
         '''
-
         version_str = str(version)
         version_split = version_str.split('.')
         major = version_split[0]
-        minor = version_split[1]
+        try:
+            minor = version_split[1]
+        except IndexError:
+            minor = '0'
 
         if '-' not in version_str:
-            patch_str = version_split[2]
+            try:
+                patch_str = version_split[2]
+            except IndexError:
+                patch_str = '0'
             pre_release = ''
         else:
             hyphen_idx = version_str.index('-')
@@ -78,7 +82,7 @@ def main():
         ("1.2.0", "1.2.42"),
         ("1.1.0-alpha", "1.2.0-alpha.1"),
         ("1.0.1b", "1.0.10-alpha.beta"),
-        ("1.0.0-rc.1", "1.0.0"),
+        ("1.0.0-rc.1", "1.0.0")
     ]
 
     for version_1, version_2 in to_test:
