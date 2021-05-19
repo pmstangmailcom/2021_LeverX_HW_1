@@ -22,18 +22,16 @@ from xml.dom.minidom import parseString
 from dicttoxml import dicttoxml
 
 
-class MyStudentsRoomsData():
-
-    def __init__(self, students, rooms, format_file):
-        self.students = students
-        self.rooms = rooms
-        self.format_file = format_file
+class MyReader():
 
     def read_json_file(self, filename):
         ''' Load data from json file. Return data(list of dicts).'''
         with open(filename, 'r') as f:
             data = json.load(f)
         return data
+
+
+class MyWriter():
 
     def write_json_file(self, filename, data):
         ''' Write data to json file.'''
@@ -45,23 +43,27 @@ class MyStudentsRoomsData():
         xml = dicttoxml(data, attr_type=False)
         dom = parseString(xml)
         data_to_file = dom.toprettyxml()
-
         with open(filename, 'w') as f:
             f.write(str(data_to_file))
 
-    def gen_students(self, filename):
+
+class StudentsAndRoomsData():
+
+    def __init__(self, students_data, rooms_data):
+        self.students_data = students_data
+        self.rooms_data = rooms_data
+
+    def gen_students(self, students_data):
         '''Go through the entire students list. Yield dict with data about the student.'''
-        students_data = self.read_json_file(filename)
         for student in students_data:
             yield student
 
-    def make_file(self):
+    def make_data(self, rooms_data):
         '''
         Form a new rooms list. Add to dict key: value ('students': []). Using students generator (def gen_students()),
         write down each student's name in the appropriate room. Write the received data to json file.
         '''
-        rooms_data = self.read_json_file(self.rooms)
-        gen_students_data = self.gen_students(self.students)
+        gen_students_data = self.gen_students(self.students_data)
         format_data = [x for x in rooms_data]
 
         for gen in gen_students_data:
@@ -75,8 +77,7 @@ class MyStudentsRoomsData():
         return format_data
 
 
-if __name__ == '__main__':
-    print('Enter filenames (for example  students.json rooms.json format.json (or format.xml)')
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('students', type=argparse.FileType('r'), help='json file with info about students')
     parser.add_argument('rooms', type=argparse.FileType('r'), help='json file with info about rooms')
@@ -84,11 +85,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     rooms_file, students_file, output_file = (args.rooms.name, args.students.name, args.output.name)
-    data = MyStudentsRoomsData(rooms_file, students_file, output_file).make_file()
+
+    students_data = MyReader().read_json_file(students_file)
+    rooms_data = MyReader().read_json_file(rooms_file)
+    output_data = StudentsAndRoomsData(students_data, rooms_data).make_data(rooms_data)
 
     if args.output.name.lower().endswith(('.json')):
-        MyStudentsRoomsData(rooms_file, students_file, output_file).write_json_file(output_file, data)
+        MyWriter().write_json_file(output_file, output_data)
     elif args.output.name.lower().endswith(('.xml')):
-        MyStudentsRoomsData(rooms_file, students_file, output_file).write_xml_file(output_file, data)
+        MyWriter().write_xml_file(output_file, output_data)
     else:
         print('Output file type must be json or xml')
+
+
+if __name__ == '__main__':
+    main()
